@@ -1,22 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import FileManager from "./components/FileManager";
 
-export default function FileManager() {
-    const [files, setFiles] = useState<{name: string, content: string} []> ([]);
-    const [newFileName, setNewFileName] = useState("");
-    const [newFileContent, setNewFileContent] = useState("");
+export default function Page() {
 
-    // Create new file
-
-    // Delete file
-
-    // Edit file
-
-    // Frontend
-    return (
-        <div>
-            <h1>Blockchain Cloud Storage - File Management</h1>
-        </div>
-    );
-};
+  return (
+    <div >
+        <FileManager />
+    </div>
+  );
+}
