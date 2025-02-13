@@ -22,7 +22,13 @@ export default function Home() {
       return;
     }
 
-    router.push(`/files?accessKey=${encodeURIComponent(accessKey)}`);
+    // Save access key to sessionStorage
+    console.log("Storing Key:", accessKey);
+    sessionStorage.setItem("accessKey", accessKey);
+
+    // Redirect to FileManager
+    console.log("Navigating to /files");
+    router.push("/files");
   };
 
   // Generate new Access Key
