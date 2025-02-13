@@ -45,7 +45,11 @@ export default function FileManager({ accessKey }: { accessKey: string }) {
   // Add new file
   const handleAddFile = () => {
     const newFileName = prompt("Enter new file name:");
-    if (!newFileName) return;
+    if (!newFileName) {
+      alert("File name cannot be empty!");
+      return;
+    };
+    
     if (fileList.includes(newFileName)) {
       alert("File already exists!");
       return;
