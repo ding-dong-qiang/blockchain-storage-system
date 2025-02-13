@@ -1,110 +1,137 @@
 "use client";
 
-import { useState } from "react";
-import { saveFile, loadFile, deleteFile, generateAccessKey } from "../utils/fileStorage";
+import { useState, useEffect } from "react";
+import { getFileList, saveFile, loadFile, deleteFile } from "../utils/fileStorage";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function FileManager({ accessKey, autoGenerate, onBack }: { accessKey: string; autoGenerate: boolean; onBack: () => void }) {
-  const [fileName, setFileName] = useState("");
-  const [fileContent, setFileContent] = useState("");
-  const [message, setMessage] = useState("");
-  const [generatedAccessKey, setGeneratedAccessKey] = useState(accessKey);
+export default function FileManager({ accessKey }: { accessKey: string }) {
+  const [fileList, setFileList] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string>("");
 
+  // Load file list
+  useEffect(() => {
+    setFileList(getFileList(accessKey));
+  }, [accessKey]);
+
+  // Handle file click and decrypt content
+  const handleFileClick = async (fileName: string) => {
+    const content = await loadFile(fileName, accessKey);
+    setSelectedFile(fileName);
+    setFileContent(content || ""); // If content is null, set empty string
+  };
+
+  // Save current file
   const handleSave = async () => {
-    if (!fileName.trim() || !fileContent.trim()) {
-      return alert("Please enter file name and content");
+    if (!selectedFile) {
+      return alert("No file selected!");
     }
+    await saveFile(selectedFile, fileContent, accessKey);
+    alert(`File "${selectedFile}" saved successfully!`);
 
-    let finalAccessKey = generatedAccessKey;
-    if (!generatedAccessKey && autoGenerate) {
-      finalAccessKey = generateAccessKey(); 
-      setGeneratedAccessKey(finalAccessKey);
-      alert(`Your new Access Key: ${finalAccessKey}\nPlease save this key, as it cannot be recovered!`);
-    }
-
-    await saveFile(fileName, fileContent, finalAccessKey);
-    setMessage(`File "${fileName}" saved successfully!`);
+    setSelectedFile(null);
+    setFileContent("");
   };
 
-  const handleLoad = async () => {
-    if (!fileName.trim()) {
-      return alert("Please enter file name");
-    }
-    if (!generatedAccessKey) {
-      return alert("Missing access key.");
-    }
-
-    const content = await loadFile(fileName, generatedAccessKey);
-    if (content === null) {
-      return setMessage(`File "${fileName}" not found or access key is incorrect`);
-    }
-
-    setFileContent(content);
-    setMessage(`File "${fileName}" loaded successfully`);
-  };
-
+  // Delete current file
   const handleDelete = async () => {
-    await deleteFile(fileName, generatedAccessKey);
-    setMessage(`File "${fileName}" deleted`);
+    if (!selectedFile) return alert("No file selected!");
+    await deleteFile(selectedFile, accessKey);
+    setFileList(getFileList(accessKey));
+    setSelectedFile(null);
+    setFileContent("");
+  };
+
+  // Add new file
+  const handleAddFile = () => {
+    const newFileName = prompt("Enter new file name:");
+    if (!newFileName) return;
+    if (fileList.includes(newFileName)) {
+      alert("File already exists!");
+      return;
+    }
+    setFileList([...fileList, newFileName]); // Update file list
+    setSelectedFile(newFileName); // Select new file
+    setFileContent(""); // Clear content
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-xl font-bold text-center text-gray-800 mb-4">File Manager</h2>
+    <div className="flex items-center justify-center w-full min-h-screen bg-gray-900 text-white">
+      <Card className="w-full max-w-[95vw] bg-gray-800 shadow-xl rounded-lg overflow-hidden">
+        <CardHeader className="bg-gray-700 py-4">
+          <CardTitle className="text-center text-xl text-white">File Manager</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] p-4">
+          {/* File list */}
+          <Card className="w-full lg:w-1/4 h-full lg:mr-4 mb-4 lg:mb-0 bg-gray-700 overflow-hidden flex flex-col">
+            <CardHeader className="py-2">
+              <CardTitle className="text-gray-300 text-lg">My Files</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto border border-gray-600 rounded-lg p-2">
+              <ul className="space-y-2">
+                {fileList.map((file) => (
+                  <li
+                    key={file}
+                    onClick={() => handleFileClick(file)}
+                    className={`p-2 cursor-pointer rounded-md transition-all ${
+                      selectedFile === file ? "bg-gray-500 text-white" : "hover:bg-gray-600 text-gray-300"
+                    }`}
+                  >
+                    {file}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            <div className="px-2 py-4">
+            <button
+              className="mt-4 w-full bg-green-700 hover:bg-green-800 text-white py-2 rounded-md transition duration-200"
+              onClick={handleAddFile}
+            >
+              + Add File
+            </button>
+            </div>
+          </Card>
 
-      {generatedAccessKey && (
-        <div className="mb-4 p-3 bg-gray-100 rounded-md text-center">
-          <p className="text-sm text-gray-700 font-semibold">Your Access Key:</p>
-          <p className="text-sm text-blue-500 font-mono break-all">{generatedAccessKey}</p>
-          <p className="text-xs text-gray-500">Save this key for future access!</p>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="File name"
-          value={fileName}
-          onChange={(e) => setFileName(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-        />
-
-        <textarea
-          placeholder="File content"
-          value={fileContent}
-          onChange={(e) => setFileContent(e.target.value)}
-          className="w-full px-4 py-2 h-32 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-        />
-
-        <div className="flex justify-between space-x-2">
-          <button
-            className="w-1/3 bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition duration-200"
-            onClick={handleSave}
-          >
-            Save File
-          </button>
-          <button
-            className="w-1/3 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
-            onClick={handleLoad}
-          >
-            Load File
-          </button>
-          <button
-            className="w-1/3 bg-red-500 hover:bg-red-600 text-white py-2 rounded-md transition duration-200"
-            onClick={handleDelete}
-          >
-            Delete File
-          </button>
-        </div>
-      </div>
-
-      {message && <p className="mt-4 text-center text-sm text-gray-700">{message}</p>}
-
-      <button
-        className="mt-6 w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-md transition duration-200"
-        onClick={onBack}
-      >
-        Back to Key Input
-      </button>
+          {/* File content editing area */}
+          <Card className="w-full lg:w-3/4 h-full bg-gray-700 flex flex-col">
+            <CardHeader className="py-2">
+              <CardTitle className="text-gray-300 text-lg">
+                {selectedFile ? `Editing: ${selectedFile}` : "Select a file to view or edit"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col space-y-4">
+              {/* Textarea */}
+              <textarea
+                className="w-full p-4 flex-1 bg-gray-600 text-white border border-gray-500 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
+                value={fileContent}
+                onChange={(e) => setFileContent(e.target.value)}
+                disabled={!selectedFile} // Disable textarea if no file selected
+              />
+              {/* Save & Delete Buttons */}
+              <div className="flex justify-end space-x-4">
+                <button
+                  className={`w-1/3 rounded-md transition duration-200 ${
+                    selectedFile ? "bg-blue-800 hover:bg-blue-900 text-white" : "bg-gray-500 text-gray-300 cursor-not-allowed"
+                  }`}
+                  onClick={handleSave}
+                  disabled={!selectedFile}
+                >
+                  Save
+                </button>
+                <button
+                  className={`w-1/3 py-2 rounded-md transition duration-200 ${
+                    selectedFile ? "bg-red-800 hover:bg-red-900 text-white" : "bg-gray-500 text-gray-300 cursor-not-allowed"
+                  }`}
+                  onClick={handleDelete}
+                  disabled={!selectedFile}
+                >
+                  Delete
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </CardContent>
+      </Card>
     </div>
   );
 }
