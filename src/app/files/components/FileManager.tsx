@@ -8,18 +8,32 @@ export default function FileManager() {
   const [fileContent, setFileContent] = useState("");
   const [message, setMessage] = useState("");
   const [fileList, setFileList] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const keys = Object.keys(localStorage);
-    setFileList(keys);
+    const sortedFiles = keys
+      .map((key) => ({
+        name: key,
+        createdAt: JSON.parse(localStorage.getItem(key) || "{}").createdAt || 0,
+      }))
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .map((file) => file.name);
+    setFileList(sortedFiles);
   }, [fileName]);
 
   const handleLoad = async (name: string) => {
     setFileName(name);
-    const content = await loadFile(name);
-    setFileContent(content || "");
-    setMessage(content ? "File loaded successfully." : "File not found.");
+    const storedData = await loadFile(name);
+    try {
+      const parsedData = JSON.parse(storedData || "{}");
+      setFileContent(parsedData.content || "");
+      setMessage(
+        parsedData.content ? "File loaded successfully." : "File not found."
+      );
+    } catch (error) {
+      setFileContent(storedData || "");
+      setMessage(storedData ? "File loaded successfully." : "File not found.");
+    }
   };
 
   const handleSave = async () => {
@@ -27,14 +41,18 @@ export default function FileManager() {
       setMessage("Please enter a file name.");
       return;
     }
-    await saveFile(fileName, fileContent);
+    const timestamp = Date.now();
+    await saveFile(
+      fileName,
+      JSON.stringify({ content: fileContent, createdAt: timestamp })
+    );
     setFileList([...new Set([...fileList, fileName])]);
     setMessage("File saved successfully.");
   };
 
   const handleDelete = async () => {
     if (!fileName) {
-      setMessage("Please enter a file name.");
+      setMessage("File must be selected in order to delete.");
       return;
     }
     await deleteFile(fileName);
@@ -43,55 +61,48 @@ export default function FileManager() {
     setMessage("File deleted successfully.");
   };
 
-  const handleExport = () => {
-    const blob = new Blob([fileContent], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${fileName || "untitled"}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleCreateFile = async () => {
+    const newFileName = prompt("Enter a new file name:");
+    if (newFileName) {
+      const timestamp = Date.now();
+      await saveFile(
+        newFileName,
+        JSON.stringify({ content: "", createdAt: timestamp })
+      );
+      const updatedFiles = Object.keys(localStorage)
+        .map((key) => ({
+          name: key,
+          createdAt:
+            JSON.parse(localStorage.getItem(key) || "{}").createdAt || 0,
+        }))
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .map((file) => file.name);
+      setFileList(updatedFiles);
+      setFileName(newFileName);
+      setFileContent("");
+      setMessage(`File '${newFileName}' created.`);
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen p-6 bg-gray-100 text-black max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold text-center mb-4">File Manager</h1>
 
-      <div className="flex flex-col mb-4 w-full">
-        <div className="flex flex-col w-full mb-2">
-          <label className="font-semibold">Search files:</label>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded w-full text-black border-gray-400"
-          />
-        </div>
-        <div className="flex flex-col w-full">
-          <label className="font-semibold">Enter file name:</label>
-          <input
-            type="text"
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-            className="border p-2 rounded w-full text-black border-gray-400"
-          />
-        </div>
-      </div>
       <div className="flex space-x-4 mb-4">
-        <div className="w-1/4 bg-white p-4 rounded shadow text-black border border-gray-400 overflow-y-auto max-h-64">
-          <h2 className="text-lg font-bold">Saved Files</h2>
-          <ul>
-            {fileList
-              .filter((file: string) => file.includes(searchTerm))
-              .map((file) => (
-                <li
-                  key={file}
-                  className="cursor-pointer text-blue-600 hover:underline"
-                  onClick={() => handleLoad(file)}
-                >
-                  {file}
-                </li>
-              ))}
+        <div className="w-1/4 bg-white p-4 rounded shadow text-black border border-gray-400 max-h-64 flex flex-col overflow-hidden">
+          <h2 className="text-sm font-semibold bg-white p-1 text-left mb-1">
+            Files
+          </h2>
+          <ul className="overflow-y-auto max-h-56 pl-1">
+            {fileList.map((file) => (
+              <li
+                key={file}
+                className="cursor-pointer text-blue-600 hover:underline break-words overflow-hidden w-full text-sm"
+                onClick={() => handleLoad(file)}
+              >
+                {file}
+              </li>
+            ))}
           </ul>
         </div>
 
@@ -104,25 +115,25 @@ export default function FileManager() {
       </div>
       <div className="flex space-x-2 mt-4 justify-center">
         <button
+          onClick={handleCreateFile}
+          className="px-4 py-1 bg-violet-700 text-black rounded hover:bg-violet-800"
+        >
+          Create File
+        </button>
+        <button
           onClick={handleSave}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 border border-gray-400"
+          className="px-4 py-1 bg-violet-700 text-black rounded hover:bg-violet-800"
         >
           Save
         </button>
         <button
           onClick={handleDelete}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 border border-gray-400"
+          className="px-4 py-1 bg-violet-700 text-black rounded hover:bg-violet-800"
         >
           Delete
         </button>
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 border border-gray-400"
-        >
-          Export
-        </button>
       </div>
-      {message && <p className="mt-4 text-red-500">{message}</p>}
+      {message && <p className="mt-4 text-black">{message}</p>}
     </div>
   );
 }
