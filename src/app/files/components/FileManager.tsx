@@ -84,7 +84,7 @@ export default function FileManager({ accessKey }: { accessKey: string }) {
             </CardContent>
             <div className="px-2 py-4">
             <button
-              className="mt-4 w-full bg-green-700 hover:bg-green-800 text-white py-2 rounded-md transition duration-200"
+              className="mt-4 w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-md transition duration-200"
               onClick={handleAddFile}
             >
               + Add File
@@ -111,7 +111,7 @@ export default function FileManager({ accessKey }: { accessKey: string }) {
               <div className="flex justify-end space-x-4">
                 <button
                   className={`w-1/3 rounded-md transition duration-200 ${
-                    selectedFile ? "bg-blue-800 hover:bg-blue-900 text-white" : "bg-gray-500 text-gray-300 cursor-not-allowed"
+                    selectedFile ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-500 text-gray-300 cursor-not-allowed"
                   }`}
                   onClick={handleSave}
                   disabled={!selectedFile}
@@ -119,8 +119,8 @@ export default function FileManager({ accessKey }: { accessKey: string }) {
                   Save
                 </button>
                 <button
-                  className={`w-1/3 py-2 rounded-md transition duration-200 ${
-                    selectedFile ? "bg-red-800 hover:bg-red-900 text-white" : "bg-gray-500 text-gray-300 cursor-not-allowed"
+                  className={`w-1/6 py-2 rounded-md transition duration-200 ${
+                    selectedFile ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-500 text-gray-300 cursor-not-allowed"
                   }`}
                   onClick={handleDelete}
                   disabled={!selectedFile}

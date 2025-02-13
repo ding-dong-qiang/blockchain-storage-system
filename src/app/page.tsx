@@ -7,6 +7,8 @@ import { generateAccessKey } from "./files/utils/fileStorage";
 export default function Home() {
   const [accessKey, setAccessKey] = useState("");
   const router = useRouter();
+  const isValidAccessKey = (key: string) => 
+    /^[A-Za-z0-9]{32}$/.test(key) && /[A-Za-z]/.test(key) && /[0-9]/.test(key);
 
   // Handle enter FileManager
   const handleEnter = () => {
@@ -14,6 +16,12 @@ export default function Home() {
       alert("Please enter or generate an access key.");
       return;
     }
+
+    if (!isValidAccessKey(accessKey)) {
+      alert("Invalid access key! Please put valid key or generate a new one.");
+      return;
+    }
+
     router.push(`/files?accessKey=${encodeURIComponent(accessKey)}`);
   };
 
