@@ -156,7 +156,7 @@ function deriveKey(purpose: string): string {
  * This allows using different keys for different types of data
  * while maintaining a single source of truth
  */
-export function getPurposeKey(purpose: 'filename' | 'content' | 'metadata'): string {
+export function getPurposeKey(purpose: 'filename' | 'content' | 'metadata' | 'mapping'): string {
   return deriveKey(purpose);
 }
 
