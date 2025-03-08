@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../../context/authContext";
+import { useAuth } from "../../context/authContext";
 import { createFile, updateFile, deleteFile, getAllFiles, getFileById, FileData } from "../utils/fileStorage";
 
 export default function FileManager() {
@@ -16,7 +16,9 @@ export default function FileManager() {
   const fileListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+
+    const authToken = localStorage.getItem("authToken");
+    if (!isAuthenticated || !authToken) {
       router.push("/"); // Redirect to login page if not authenticated
     } else {
       updateFileList();
