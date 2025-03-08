@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { 
-  createFile,
-  updateFile,
-  deleteFile,
-  getAllFiles,
-  getFileById,
-  FileData
-} from "../utils/fileStorage";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../context/authContext";
+import { createFile, updateFile, deleteFile, getAllFiles, getFileById, FileData } from "../utils/fileStorage";
 
 export default function FileManager() {
+  const { isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+
   const [files, setFiles] = useState<FileData[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const [fileContent, setFileContent] = useState("");
@@ -18,16 +16,20 @@ export default function FileManager() {
   const fileListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    updateFileList();
-  }, []);
+    if (!isAuthenticated) {
+      router.push("/"); // Redirect to login page if not authenticated
+    } else {
+      updateFileList();
+    }
+  }, [isAuthenticated, router]);
 
   const updateFileList = async () => {
     try {
       const allFiles = await getAllFiles();
       setFiles(allFiles);
     } catch (error) {
-      console.error('Error updating file list:', error);
-      setMessage('Failed to load file list');
+      console.error("Error updating file list:", error);
+      setMessage("Failed to load file list");
     }
   };
 
@@ -39,7 +41,6 @@ export default function FileManager() {
         setFileContent("");
         return;
       }
-
       setSelectedFile(fileData);
       setFileContent(fileData.content);
       setMessage("File loaded successfully");
@@ -113,7 +114,7 @@ export default function FileManager() {
           newName = `${trimmedName} (${counter})`;
           counter++;
         }
-        
+
         const newFile = await createFile(newName);
         await updateFileList();
         setSelectedFile(newFile);
@@ -190,10 +191,18 @@ export default function FileManager() {
       </div>
 
       {message && (
-        <div className="mt-4 p-2 text-center text-sm">
-          {message}
-        </div>
+        <div className="mt-4 p-2 text-center text-sm">{message}</div>
       )}
+
+      <button
+        onClick={() => {
+          logout();
+          router.push("/");
+        }}
+        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 mt-4"
+      >
+        Logout
+      </button>
     </div>
   );
 }
