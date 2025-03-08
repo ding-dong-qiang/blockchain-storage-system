@@ -2,16 +2,17 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 
-// Auth context interface
 interface AuthContextType {
   isAuthenticated: boolean;
+  errorMessage: string | null;
+  loading: boolean;
   login: (token: string) => void;
   logout: () => void;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Custom hook to access the AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -24,12 +25,12 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Auth provider to manage authentication state
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check if there is a token in localStorage on app load
     const token = localStorage.getItem("authToken");
     if (token) {
       setIsAuthenticated(true);
@@ -37,22 +38,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const login = (token: string) => {
-    // You can replace this with a real token check logic
-    if (token === "MyPrivateKey") {
-      setIsAuthenticated(true);
-      localStorage.setItem("authToken", token); // Store token in localStorage
-    } else {
-      alert("Invalid token!");
-    }
+    setLoading(true); 
+
+    setTimeout(() => {
+      if (token === "MyPrivateKey") {
+        setIsAuthenticated(true);
+        setErrorMessage(null);
+        localStorage.setItem("authToken", token);
+      } else {
+        setErrorMessage("Invalid key token! Please enter the correct token.");
+      }
+      setLoading(false); 
+    }, 500);
   };
 
   const logout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem("authToken"); // Clear the token from localStorage
+    setErrorMessage(null);
+    localStorage.removeItem("authToken");
+  };
+
+  const clearError = () => {
+    setErrorMessage(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, errorMessage, loading, login, logout, clearError }}>
       {children}
     </AuthContext.Provider>
   );

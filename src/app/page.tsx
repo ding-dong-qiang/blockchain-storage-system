@@ -1,23 +1,18 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../context/authContext";
+import { useAuth } from "../context/authContext"; 
 
 export default function Home() {
   const router = useRouter();
-  const { login } = useAuth(); // Access the login function from AuthContext
+  const { login, errorMessage, clearError } = useAuth();
   const [keyToken, setKeyToken] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogin = () => {
-    // Attempt to log in with the entered token
-    if (keyToken.trim()) {
-      login(keyToken); // Use the login function from context
+    login(keyToken.trim());
 
-      // If login is successful, navigate to the /files route
+    if (!errorMessage) {
       router.push("/files");
-    } else {
-      setErrorMessage("Please enter a valid token!");
     }
   };
 
@@ -38,7 +33,7 @@ export default function Home() {
           value={keyToken}
           onChange={(e) => setKeyToken(e.target.value)}
         />
-        
+
         <button
           onClick={handleLogin}
           className="ml-4 px-6 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
