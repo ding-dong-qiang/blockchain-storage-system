@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { encryptWithKey, decryptWithKey } from "../files/utils/encryption";
 
 // For testing, this would be in memory or temporary storage
-// In production, this would come from your backend/blockchain
 const TEST_ENCRYPTED_VALUES: Record<string, string> = {};
 
 interface AuthContextType {
@@ -26,7 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [userKey, setUserKey] = useState("");
 
-  // This function would only exist in your test environment
+  // Check localStorage on initial load
+  useEffect(() => {
+    const storedKey = localStorage.getItem("authToken");
+    if (storedKey) {
+      setUserKey(storedKey);
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  // This function would only exist in the test environment
   const storeTestKey = (key: string) => {
     // Create a test encrypted value
     const testEncrypted = encryptWithKey("valid_user", key);
@@ -50,6 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (decrypted === "valid_user") {
             setUserKey(key);
             setIsAuthenticated(true);
+            // Store the key in localStorage
+            localStorage.setItem("authToken", key);
             setLoading(false);
             return true;
           }
@@ -71,6 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUserKey("");
     setIsAuthenticated(false);
+    // Clear the key from localStorage
+    localStorage.removeItem("authToken");
   };
 
   const clearError = () => {

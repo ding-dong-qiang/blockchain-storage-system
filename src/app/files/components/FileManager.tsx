@@ -16,13 +16,14 @@ export default function FileManager() {
   const fileListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-
-    const authToken = localStorage.getItem("authToken");
-    if (!isAuthenticated || !authToken) {
-      router.push("/"); // Redirect to login page if not authenticated
-    } else {
-      updateFileList();
+    // Redirect if not authenticated
+    if (!isAuthenticated) {
+      router.push("/");
+      return;
     }
+    
+    // If authenticated, update the file list
+    updateFileList();
   }, [isAuthenticated, router]);
 
   const updateFileList = async () => {
