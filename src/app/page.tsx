@@ -42,6 +42,8 @@ export default function Home() {
         <div className="flex mt-4 text-center justify-center">
           <input
             type="text"
+            id="key"
+            name="key"
             placeholder="Enter your key"
             className="px-4 py-2 border rounded text-gray-800"
             value={encryptionKey}
