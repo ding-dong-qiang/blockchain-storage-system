@@ -1,5 +1,6 @@
-import { encryptWithKey, decryptWithKey } from "./encryption";
-
+import { encryptWithKey, decryptWithKey } from './encryption';
+import axios from 'axios';
+import { Dispatch, SetStateAction } from 'react';
 /**
  * Interface for file data structure
  */
@@ -9,6 +10,22 @@ export interface FileData {
   content: string;
   createdAt: number;
   updatedAt: number;
+}
+
+/**
+ * Interface for combined file data for IPFS
+ */
+interface IPFSFileData {
+  filename: string;
+  content: string;
+}
+
+/**
+ * Interface for IPFS state management
+ */
+export interface IPFSState {
+  cid: string | null;
+  setCid: Dispatch<SetStateAction<string | null>>;
 }
 
 // Constants for storage keys
@@ -66,7 +83,7 @@ function getFileData(id: string): string | null {
   try {
     const encrypted = localStorage.getItem(`${FILE_PREFIX}${id}`);
     if (!encrypted) return null;
-    return decryptWithKey(encrypted);
+    return encrypted; // Return raw encrypted data without decryption
   } catch (error) {
     console.error("Error getting file data:", error);
     return null;
@@ -96,8 +113,9 @@ export async function getAllFiles(): Promise<FileData[]> {
     const files: FileData[] = [];
 
     for (const [id, info] of Object.entries(index)) {
-      const content = getFileData(id);
-      if (content !== null) {
+      const encrypted = getFileData(id);
+      if (encrypted !== null) {
+        const content = decryptWithKey(encrypted);
         files.push({
           id,
           title: info.title,
@@ -125,9 +143,10 @@ export async function getFileById(id: string): Promise<FileData | null> {
     const fileInfo = index[id];
     if (!fileInfo) return null;
 
-    const content = getFileData(id);
-    if (content === null) return null;
+    const encrypted = getFileData(id);
+    if (encrypted === null) return null;
 
+    const content = decryptWithKey(encrypted);
     return {
       id,
       title: fileInfo.title,
@@ -181,10 +200,7 @@ export async function createFile(
  * Update an existing file's content
  * Throws error if file doesn't exist
  */
-export async function updateFile(
-  id: string,
-  content: string
-): Promise<FileData> {
+export async function updateFile(id: string, content: string): Promise<FileData> {
   try {
     const index = getFileIndex();
     const fileInfo = index[id];
@@ -196,13 +212,26 @@ export async function updateFile(
     // Save new content
     saveFileData(id, content);
 
-    return {
+    const fileData = {
       id,
       title: fileInfo.title,
       content,
       createdAt: fileInfo.createdAt,
       updatedAt: Date.now(),
     };
+    console.log("update file");
+
+    // Handle IPFS synchronization if ipfsState is provided
+    if (ipfsState) {
+      try {
+        await handleIPFSUpdate(ipfsState);
+      } catch (error) {
+        console.error('Failed to sync with IPFS:', error);
+        // Continue with local update even if IPFS sync fails
+      }
+    }
+
+    return fileData;
   } catch (error) {
     console.error("Error updating file:", error);
     throw error;
@@ -285,4 +314,60 @@ export async function renameFile(
  */
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+/**
+ * Combine all files into a single JSON file for IPFS
+ */
+async function getAllFilesForIPFS(): Promise<IPFSFileData[]> {
+  const index = getFileIndex();
+  const files: IPFSFileData[] = [];
+
+  for (const [id, info] of Object.entries(index)) {
+    const encrypted = getFileData(id);
+    if (encrypted !== null) {
+      files.push({
+        filename: info.title,
+        content: encrypted // Use encrypted content directly for IPFS
+      });
+    }
+  }
+
+  return files;
+}
+
+/**
+ * Handle IPFS file upload and deletion
+ */
+async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
+  try {
+    console.log("handleIPFSUpdate");
+    // Combine all files into one JSON
+    const allFiles = await getAllFilesForIPFS();
+    const combinedContent = JSON.stringify(allFiles);
+
+    // If there's an existing CID, delete the old file first
+    if (ipfsState.cid) {
+      try {
+        console.log("delete old IPFS file");
+        await axios.delete('/api/ipfs/delete', {
+          data: { cid: ipfsState.cid }
+        });
+      } catch (error) {
+        console.error('Error deleting old IPFS file:', error);
+      }
+    }
+    console.log("upload new IPFS file");
+    // Upload the new combined file
+    const formData = new FormData();
+    formData.append('file', new Blob([combinedContent], { type: 'application/json' }));
+    formData.append('fileName', 'combined_files.json');
+    formData.append('accessKey', 'your_access_key'); // You'll need to get this from somewhere
+    
+    const response = await axios.post('/api/ipfs/upload', formData);
+    ipfsState.setCid(response.data.cid);
+  } catch (error) {
+    console.error('Error handling IPFS update:', error);
+    throw error;
+  }
 }
