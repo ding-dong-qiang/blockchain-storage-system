@@ -1,230 +1,199 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { saveFile, loadFile, deleteFile } from "../utils/fileStorage";
-import crypto from "crypto";
+import { useState, useEffect, useRef } from "react";
+import { 
+  createFile,
+  updateFile,
+  deleteFile,
+  getAllFiles,
+  getFileById,
+  FileData
+} from "../utils/fileStorage";
 
 export default function FileManager() {
-  const [fileName, setFileName] = useState("");
+  const [files, setFiles] = useState<FileData[]>([]);
+  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const [fileContent, setFileContent] = useState("");
   const [message, setMessage] = useState("");
-  const [fileList, setFileList] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [key, setKey] = useState("");
-  const [iv, setIv] = useState("");
-  const [decryptedText, setDecryptedText] = useState("");
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [decryptKey, setDecryptKey] = useState("");
-  const [decryptIv, setDecryptIv] = useState("");
+  const fileListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    const keys = Object.keys(localStorage);
-    setFileList(keys);
-  }, [fileName]);
+    updateFileList();
+  }, []);
 
-  const handleLoad = async (name: string) => {
-    setFileName(name);
-    const content = await loadFile(name);
-    setFileContent(content || "");
-    setMessage(content ? "File loaded successfully." : "File not found.");
+  const updateFileList = async () => {
+    try {
+      const allFiles = await getAllFiles();
+      setFiles(allFiles);
+    } catch (error) {
+      console.error('Error updating file list:', error);
+      setMessage('Failed to load file list');
+    }
+  };
+
+  const handleLoad = async (file: FileData) => {
+    try {
+      const fileData = await getFileById(file.id);
+      if (!fileData) {
+        setMessage("File not found");
+        setFileContent("");
+        return;
+      }
+
+      setSelectedFile(fileData);
+      setFileContent(fileData.content);
+      setMessage("File loaded successfully");
+    } catch (error) {
+      console.error("Error loading file:", error);
+      setMessage("Failed to load file");
+      setFileContent("");
+    }
   };
 
   const handleSave = async () => {
-    if (!fileName) {
-      setMessage("Please enter a file name.");
-      return;
-    }
-    await saveFile(fileName, fileContent);
-    setFileList([...new Set([...fileList, fileName])]);
-    setMessage("File saved successfully.");
-  };
-
-  const handleDelete = async () => {
-    if (!fileName) {
-      setMessage("Please enter a file name.");
-      return;
-    }
-    await deleteFile(fileName);
-    setFileList(fileList.filter((f) => f !== fileName));
-    setFileContent("");
-    setMessage("File deleted successfully.");
-  };
-
-  const handleExport = () => {
-    const blob = new Blob([fileContent], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${fileName || "untitled"}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const generateKey = () => {
-    const newKey = crypto.randomBytes(32).toString("hex");
-    const newIv = crypto.randomBytes(16).toString("hex");
-    setKey(newKey);
-    setIv(newIv);
-  };
-
-  const encryptAndExport = async () => {
-    if (!fileName) {
-      alert("Please enter a file name.");
-      return;
-    }
-    const fileContent = await loadFile(fileName);
-    if (!fileContent) {
-      alert("No content found in Local Storage.");
-      return;
-    }
-
-    const algorithm = "aes-256-ctr";
-    const cipher = crypto.createCipheriv(algorithm, Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
-    const encrypted = Buffer.concat([cipher.update(fileContent, "utf8"), cipher.final()]);
-
-    const blob = new Blob([encrypted.toString("hex")], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${fileName || "encrypted"}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file && file.type === "text/plain") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedFile(e.target.result);
-      };
-      reader.readAsText(file);
-    } else {
-      alert("Please upload a valid TXT file.");
-    }
-  };
-
-  const handleDecrypt = () => {
-    if (!uploadedFile || !decryptKey || !decryptIv) {
-      alert("Please upload a file and enter key/IV.");
+    if (!selectedFile) {
+      setMessage("No file selected");
       return;
     }
 
     try {
-      const algorithm = "aes-256-ctr";
-      const decipher = crypto.createDecipheriv(algorithm, Buffer.from(decryptKey, "hex"), Buffer.from(decryptIv, "hex"));
-      const decrypted = Buffer.concat([decipher.update(Buffer.from(uploadedFile, "hex")), decipher.final()]);
-      setDecryptedText(decrypted.toString());
+      await updateFile(selectedFile.id, fileContent);
+      await updateFileList();
+      setMessage("File saved successfully");
     } catch (error) {
-      alert("Decryption failed. Please check your key and IV.");
+      console.error("Error saving file:", error);
+      setMessage("Failed to save file");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedFile) {
+      setMessage("Please select a file to delete");
+      return;
+    }
+
+    try {
+      await deleteFile(selectedFile.id);
+      await updateFileList();
+      setFileContent("");
+      setSelectedFile(null);
+      setMessage("File deleted successfully");
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      setMessage("Failed to delete file");
+    }
+  };
+
+  const handleCreateFile = async () => {
+    const newFileName = prompt("Enter new filename:");
+    if (!newFileName || !newFileName.trim()) {
+      setMessage("Filename cannot be empty");
+      return;
+    }
+
+    try {
+      const trimmedName = newFileName.trim();
+      const files = await getAllFiles();
+      const exists = files.some(f => f.title === trimmedName);
+
+      if (exists) {
+        const action = confirm(
+          `File "${trimmedName}" already exists.\nClick OK to create with a new name, or Cancel to skip.`
+        );
+        
+        if (!action) {
+          setMessage("File creation cancelled");
+          return;
+        }
+
+        // Add a suffix to make the filename unique
+        let counter = 1;
+        let newName = trimmedName;
+        while (files.some(f => f.title === newName)) {
+          newName = `${trimmedName} (${counter})`;
+          counter++;
+        }
+        
+        const newFile = await createFile(newName);
+        await updateFileList();
+        setSelectedFile(newFile);
+        setFileContent("");
+        setMessage(`File '${newName}' created successfully`);
+      } else {
+        const newFile = await createFile(trimmedName);
+        await updateFileList();
+        setSelectedFile(newFile);
+        setFileContent("");
+        setMessage(`File '${trimmedName}' created successfully`);
+      }
+    } catch (error) {
+      console.error("Error creating file:", error);
+      setMessage("Failed to create file");
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-gray-100 text-black max-w-2xl mx-auto">
+    <div className="flex flex-col min-h-screen p-6 bg-white text-black max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold text-center mb-4">File Manager</h1>
 
-      <div className="flex flex-col mb-4 w-full">
-        <div className="flex flex-col w-full mb-2">
-          <label className="font-semibold">Search files:</label>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded w-full text-black border-gray-400"
-          />
-        </div>
-        <div className="flex flex-col w-full mb-2">
-          <label className="font-semibold">Enter file name:</label>
-          <input
-            type="text"
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-            className="border p-2 rounded w-full text-black border-gray-400"
-          />
-        </div>
-
-        <div className="flex flex-col w-full mb-2">
-          <label className="font-semibold">Key:</label>
-          <input type="text" value={key} readOnly className="border p-2 rounded w-full text-black border-gray-400" />
-        </div>
-        <div className="flex flex-col w-full mb-2">
-          <label className="font-semibold">IV:</label>
-          <input type="text" value={iv} readOnly className="border p-2 rounded w-full text-black border-gray-400" />
-        </div>
-        <button onClick={generateKey} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 border border-gray-400">
-          Generate Key
-        </button>
-      </div>
       <div className="flex space-x-4 mb-4">
-        <div className="w-1/4 bg-white p-4 rounded shadow text-black border border-gray-400 overflow-y-auto max-h-64">
-          <h2 className="text-lg font-bold">Saved Files</h2>
-          <ul>
-            {fileList
-              .filter((file: string) => file.includes(searchTerm))
-              .map((file) => (
-                <li
-                  key={file}
-                  className="cursor-pointer text-blue-600 hover:underline"
-                  onClick={() => handleLoad(file)}
-                >
-                  {file}
-                </li>
-              ))}
+        <div className="w-1/4 bg-gray-100 p-4 shadow text-black border border-gray-400 max-h-64 flex flex-col overflow-hidden">
+          <h2 className="text-sm font-semibold bg-gray-100 p-1 text-left mb-1 underline">
+            File List
+          </h2>
+          <ul ref={fileListRef} className="overflow-y-scroll max-h-56 pl-1">
+            {files.map((file) => (
+              <li
+                key={file.id}
+                className={`cursor-pointer text-sm break-words overflow-hidden w-full p-1 ${
+                  selectedFile?.id === file.id
+                    ? "bg-gray-300 text-black font-bold"
+                    : "text-black hover:bg-gray-200"
+                }`}
+                onClick={() => handleLoad(file)}
+              >
+                {file.title}
+              </li>
+            ))}
           </ul>
         </div>
 
         <textarea
-          className="w-3/4 p-2 border rounded h-64 text-black border-gray-400 overflow-y-auto resize-none"
+          className="w-3/4 p-2 border h-64 text-black border-gray-400 overflow-y-scroll resize-none bg-gray-100"
           value={fileContent}
           onChange={(e) => setFileContent(e.target.value)}
-          placeholder="File content..."
+          placeholder="Enter file content here..."
         />
       </div>
-      <div className="flex space-x-2 mt-4 justify-center">
+
+      <div className="flex justify-center space-x-4">
+        <button
+          onClick={handleCreateFile}
+          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          New File
+        </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 border border-gray-400"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          disabled={!selectedFile}
         >
           Save
         </button>
         <button
           onClick={handleDelete}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 border border-gray-400"
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          disabled={!selectedFile}
         >
           Delete
         </button>
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 border border-gray-400"
-        >
-          Export
-        </button>
-        <button onClick={encryptAndExport} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 border border-gray-400">
-          Encrypt and Export
-        </button>
       </div>
-      {message && <p className="mt-4 text-red-500">{message}</p>}
-      <h2 className="text-3xl font-bold text-center mb-4">Decrypt File</h2>
-      <input type="file" accept=".txt" onChange={handleFileUpload} />
-      <div className="flex flex-col w-full mb-2">
-        <label className="font-semibold">Decryption Key:</label>
-        <input type="text" value={decryptKey} onChange={(e) => setDecryptKey(e.target.value)} className="border p-2 rounded w-full text-black border-gray-400" />
-      </div>
-      <div className="flex flex-col w-full mb-2">
-        <label className="font-semibold">Decryption IV:</label>
-        <input type="text" value={decryptIv} onChange={(e) => setDecryptIv(e.target.value)} className="border p-2 rounded w-full text-black border-gray-400" />
-      </div>
-      <button onClick={handleDecrypt} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 border border-gray-400">
-        Decrypt
-      </button>
-      <textarea
-        rows={5}
-        value={decryptedText}
-        readOnly
-        placeholder="Decrypted content will appear here"
-        style={{ width: "100%", marginTop: "10px" }}
-      />
+
+      {message && (
+        <div className="mt-4 p-2 text-center text-sm">
+          {message}
+        </div>
+      )}
     </div>
   );
 }
