@@ -7,7 +7,8 @@ import {
   deleteFile,
   getAllFiles,
   getFileById,
-  FileData
+  FileData,
+  IPFSState
 } from "../utils/fileStorage";
 
 export default function FileManager() {
@@ -15,6 +16,7 @@ export default function FileManager() {
   const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const [fileContent, setFileContent] = useState("");
   const [message, setMessage] = useState("");
+  const [cid, setCid] = useState<string | null>(null);
   const fileListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -55,9 +57,10 @@ export default function FileManager() {
       setMessage("No file selected");
       return;
     }
-
     try {
-      await updateFile(selectedFile.id, fileContent);
+      console.log("handleSave");
+      const ipfsState: IPFSState = { cid, setCid };
+      await updateFile(selectedFile.id, fileContent, ipfsState);
       await updateFileList();
       setMessage("File saved successfully");
     } catch (error) {
