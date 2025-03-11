@@ -1,6 +1,6 @@
-import { encryptWithKey, decryptWithKey } from './encryption';
-import axios from 'axios';
-import { Dispatch, SetStateAction } from 'react';
+import { encryptWithKey, decryptWithKey } from "./encryption";
+import axios from "axios";
+import { Dispatch, SetStateAction } from "react";
 /**
  * Interface for file data structure
  */
@@ -200,7 +200,11 @@ export async function createFile(
  * Update an existing file's content
  * Throws error if file doesn't exist
  */
-export async function updateFile(id: string, content: string): Promise<FileData> {
+export async function updateFile(
+  id: string,
+  content: string,
+  ipfsState?: IPFSState
+): Promise<FileData> {
   try {
     const index = getFileIndex();
     const fileInfo = index[id];
@@ -226,7 +230,7 @@ export async function updateFile(id: string, content: string): Promise<FileData>
       try {
         await handleIPFSUpdate(ipfsState);
       } catch (error) {
-        console.error('Failed to sync with IPFS:', error);
+        console.error("Failed to sync with IPFS:", error);
         // Continue with local update even if IPFS sync fails
       }
     }
@@ -328,7 +332,7 @@ async function getAllFilesForIPFS(): Promise<IPFSFileData[]> {
     if (encrypted !== null) {
       files.push({
         filename: info.title,
-        content: encrypted // Use encrypted content directly for IPFS
+        content: encrypted, // Use encrypted content directly for IPFS
       });
     }
   }
@@ -350,24 +354,27 @@ async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
     if (ipfsState.cid) {
       try {
         console.log("delete old IPFS file");
-        await axios.delete('/api/ipfs/delete', {
-          data: { cid: ipfsState.cid }
+        await axios.delete("/api/ipfs/delete", {
+          data: { cid: ipfsState.cid },
         });
       } catch (error) {
-        console.error('Error deleting old IPFS file:', error);
+        console.error("Error deleting old IPFS file:", error);
       }
     }
     console.log("upload new IPFS file");
     // Upload the new combined file
     const formData = new FormData();
-    formData.append('file', new Blob([combinedContent], { type: 'application/json' }));
-    formData.append('fileName', 'combined_files.json');
-    formData.append('accessKey', 'your_access_key'); // You'll need to get this from somewhere
-    
-    const response = await axios.post('/api/ipfs/upload', formData);
+    formData.append(
+      "file",
+      new Blob([combinedContent], { type: "application/json" })
+    );
+    formData.append("fileName", "combined_files.json");
+    formData.append("accessKey", "your_access_key"); // You'll need to get this from somewhere
+
+    const response = await axios.post("/api/ipfs/upload", formData);
     ipfsState.setCid(response.data.cid);
   } catch (error) {
-    console.error('Error handling IPFS update:', error);
+    console.error("Error handling IPFS update:", error);
     throw error;
   }
 }
