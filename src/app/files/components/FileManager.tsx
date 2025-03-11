@@ -3,14 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/authContext";
-import { 
+import {
   createFile,
   updateFile,
   deleteFile,
   getAllFiles,
   getFileById,
   FileData,
-  IPFSState
+  IPFSState,
+  handleIPFSUpdate,
 } from "../utils/fileStorage";
 
 export default function FileManager() {
@@ -30,7 +31,7 @@ export default function FileManager() {
       router.push("/");
       return;
     }
-    
+
     // If authenticated, update the file list
     updateFileList();
   }, [isAuthenticated, router]);
@@ -87,7 +88,9 @@ export default function FileManager() {
     }
 
     try {
+      const ipfsState: IPFSState = { cid, setCid };
       await deleteFile(selectedFile.id);
+      await handleIPFSUpdate(ipfsState);
       await updateFileList();
       setFileContent("");
       setSelectedFile(null);
@@ -108,13 +111,13 @@ export default function FileManager() {
     try {
       const trimmedName = newFileName.trim();
       const files = await getAllFiles();
-      const exists = files.some(f => f.title === trimmedName);
+      const exists = files.some((f) => f.title === trimmedName);
 
       if (exists) {
         const action = confirm(
           `File "${trimmedName}" already exists.\nClick OK to create with a new name, or Cancel to skip.`
         );
-        
+
         if (!action) {
           setMessage("File creation cancelled");
           return;
@@ -123,7 +126,7 @@ export default function FileManager() {
         // Add a suffix to make the filename unique
         let counter = 1;
         let newName = trimmedName;
-        while (files.some(f => f.title === newName)) {
+        while (files.some((f) => f.title === newName)) {
           newName = `${trimmedName} (${counter})`;
           counter++;
         }
@@ -203,9 +206,7 @@ export default function FileManager() {
         </button>
       </div>
 
-      {message && (
-        <div className="mt-4 p-2 text-center text-sm">{message}</div>
-      )}
+      {message && <div className="mt-4 p-2 text-center text-sm">{message}</div>}
 
       <button
         onClick={() => {

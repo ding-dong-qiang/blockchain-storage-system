@@ -343,7 +343,7 @@ async function getAllFilesForIPFS(): Promise<IPFSFileData[]> {
 /**
  * Handle IPFS file upload and deletion
  */
-async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
+export async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
   try {
     console.log("handleIPFSUpdate");
     // Combine all files into one JSON
