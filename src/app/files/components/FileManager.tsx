@@ -25,6 +25,23 @@ export default function FileManager() {
   const [cid, setCid] = useState<string | null>(null);
   const fileListRef = useRef<HTMLUListElement>(null);
 
+  // 从localStorage加载cid
+  useEffect(() => {
+    const savedCid = localStorage.getItem("lastCid");
+    if (savedCid) {
+      console.log("从localStorage加载CID:", savedCid);
+      setCid(savedCid);
+    }
+  }, []);
+
+  // 当cid变化时保存到localStorage
+  useEffect(() => {
+    if (cid) {
+      console.log("保存CID到localStorage:", cid);
+      localStorage.setItem("lastCid", cid);
+    }
+  }, [cid]);
+
   useEffect(() => {
     // Redirect if not authenticated
     if (!isAuthenticated) {
@@ -70,9 +87,22 @@ export default function FileManager() {
       return;
     }
     try {
-      console.log("handleSave");
+      console.log("开始保存文件");
+
+      // 检查localStorage中是否有authToken
+      const authToken = localStorage.getItem("authToken");
+      console.log(
+        "保存文件时，从localStorage获取的authToken:",
+        authToken ? "已找到" : "未找到"
+      );
+
+      // 检查当前cid状态
+      console.log("当前CID状态:", cid);
+
       const ipfsState: IPFSState = { cid, setCid };
+      console.log("准备调用updateFile函数，传递CID:", cid);
       await updateFile(selectedFile.id, fileContent, ipfsState);
+      console.log("updateFile函数调用完成，新CID:", cid);
       await updateFileList();
       setMessage("File saved successfully");
     } catch (error) {
@@ -88,9 +118,14 @@ export default function FileManager() {
     }
 
     try {
+      console.log("开始删除文件");
+      console.log("当前CID状态:", cid);
+
       const ipfsState: IPFSState = { cid, setCid };
       await deleteFile(selectedFile.id);
+      console.log("文件已从本地删除，准备更新IPFS");
       await handleIPFSUpdate(ipfsState);
+      console.log("IPFS更新完成，新CID:", cid);
       await updateFileList();
       setFileContent("");
       setSelectedFile(null);

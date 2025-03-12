@@ -1,6 +1,7 @@
 import { encryptWithKey, decryptWithKey } from "./encryption";
 import axios from "axios";
 import { Dispatch, SetStateAction } from "react";
+import CryptoJS from "crypto-js";
 /**
  * Interface for file data structure
  */
@@ -206,6 +207,7 @@ export async function updateFile(
   ipfsState?: IPFSState
 ): Promise<FileData> {
   try {
+    console.log("updateFile - 开始执行");
     const index = getFileIndex();
     const fileInfo = index[id];
 
@@ -223,16 +225,20 @@ export async function updateFile(
       createdAt: fileInfo.createdAt,
       updatedAt: Date.now(),
     };
-    console.log("update file");
+    console.log("文件内容已更新");
 
     // Handle IPFS synchronization if ipfsState is provided
     if (ipfsState) {
+      console.log("ipfsState存在，准备调用handleIPFSUpdate");
       try {
         await handleIPFSUpdate(ipfsState);
+        console.log("handleIPFSUpdate调用完成");
       } catch (error) {
         console.error("Failed to sync with IPFS:", error);
         // Continue with local update even if IPFS sync fails
       }
+    } else {
+      console.log("ipfsState不存在，跳过IPFS同步");
     }
 
     return fileData;
@@ -341,38 +347,106 @@ async function getAllFilesForIPFS(): Promise<IPFSFileData[]> {
 }
 
 /**
+ * Calculate public key from private key
+ */
+function calculatePublicKey(privateKey: string): string {
+  console.log("calculatePublicKey - 开始计算公钥");
+  console.log("privateKey类型:", typeof privateKey);
+  console.log("privateKey长度:", privateKey.length);
+
+  try {
+    const publicKey = CryptoJS.SHA256(privateKey).toString();
+    console.log("计算完成，公钥前10位:", publicKey.substring(0, 10) + "...");
+    return publicKey;
+  } catch (error) {
+    console.error("计算公钥时出错:", error);
+    throw error;
+  }
+}
+
+/**
  * Handle IPFS file upload and deletion
  */
 export async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
   try {
-    console.log("handleIPFSUpdate");
+    console.log("handleIPFSUpdate - 开始执行");
     // Combine all files into one JSON
     const allFiles = await getAllFilesForIPFS();
     const combinedContent = JSON.stringify(allFiles);
 
     // If there's an existing CID, delete the old file first
     if (ipfsState.cid) {
+      console.log("发现现有CID:", ipfsState.cid);
       try {
-        console.log("delete old IPFS file");
-        await axios.delete("/api/ipfs/delete", {
+        console.log("准备删除旧文件，CID:", ipfsState.cid);
+        const deleteResponse = await axios.delete("/api/ipfs/delete", {
           data: { cid: ipfsState.cid },
         });
-      } catch (error) {
-        console.error("Error deleting old IPFS file:", error);
+        console.log("删除旧文件响应:", deleteResponse.data);
+      } catch (error: any) {
+        console.error("删除旧文件时出错:", error);
+        if (error.response) {
+          console.error("错误响应数据:", error.response.data);
+          console.error("错误响应状态:", error.response.status);
+        }
       }
+    } else {
+      console.log("没有现有CID，跳过删除步骤");
     }
-    console.log("upload new IPFS file");
+
+    console.log("准备上传新文件");
+
+    // 检查localStorage中是否有authToken
+    const authToken = localStorage.getItem("authToken");
+    console.log(
+      "从localStorage获取的authToken:",
+      authToken ? "已找到" : "未找到"
+    );
+
+    // Generate file name based on user's public key
+    let fileName = "combined_files.json"; // Default fallback
+
+    if (authToken) {
+      // Calculate public key from private key
+      const publicKey = calculatePublicKey(authToken);
+      console.log("计算得到的公钥前10位:", publicKey.substring(0, 10) + "...");
+      fileName = `${publicKey}.json`;
+      console.log("使用的文件名:", fileName);
+    } else {
+      console.log("未找到authToken，使用默认文件名:", fileName);
+    }
+
     // Upload the new combined file
     const formData = new FormData();
     formData.append(
       "file",
       new Blob([combinedContent], { type: "application/json" })
     );
-    formData.append("fileName", "combined_files.json");
-    formData.append("accessKey", "your_access_key"); // You'll need to get this from somewhere
+    formData.append("fileName", fileName);
+    formData.append("accessKey", "public"); // Using public access
 
+    // 检查formData中的fileName是否被正确设置
+    console.log("检查formData中的fileName");
+    try {
+      for (const pair of formData.entries()) {
+        console.log(
+          `${pair[0]}: ${typeof pair[1] === "object" ? "[Blob/File]" : pair[1]}`
+        );
+      }
+    } catch (error) {
+      console.error("无法遍历formData:", error);
+    }
+
+    console.log("开始上传，使用文件名:", fileName);
     const response = await axios.post("/api/ipfs/upload", formData);
+    console.log("上传完成，获取到新CID:", response.data.cid);
+
+    // 更新ipfsState中的cid
+    const oldCid = ipfsState.cid;
     ipfsState.setCid(response.data.cid);
+    console.log("CID已更新:", oldCid, "->", response.data.cid);
+
+    console.log("上传完成，CID:", response.data.cid);
   } catch (error) {
     console.error("Error handling IPFS update:", error);
     throw error;
