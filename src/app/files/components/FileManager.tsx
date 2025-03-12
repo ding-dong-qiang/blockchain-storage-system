@@ -184,6 +184,60 @@ export default function FileManager() {
     }
   };
 
+  // 清除所有本地存储数据
+  const clearAllLocalData = () => {
+    console.log("开始清除所有本地存储数据");
+
+    try {
+      // 保存一下需要保留的数据（如果有的话）
+      // const dataToKeep = {}; // 如果有需要保留的数据，可以在这里保存
+
+      // 一次性清除所有localStorage数据
+      localStorage.clear();
+      console.log("已清除所有localStorage数据");
+
+      // 清除sessionStorage数据（如果有使用的话）
+      sessionStorage.clear();
+      console.log("已清除所有sessionStorage数据");
+
+      // 尝试清除IndexedDB数据（如果有使用的话）
+      const clearIndexedDB = async () => {
+        try {
+          const databases = await window.indexedDB.databases();
+          databases.forEach((db) => {
+            if (db.name) {
+              window.indexedDB.deleteDatabase(db.name);
+              console.log(`已删除IndexedDB数据库: ${db.name}`);
+            }
+          });
+        } catch (error) {
+          console.error("清除IndexedDB时出错:", error);
+        }
+      };
+
+      // 尝试执行IndexedDB清除
+      clearIndexedDB().catch((err) => console.error("清除IndexedDB失败:", err));
+
+      // 清除所有cookies（如果有使用的话）
+      document.cookie.split(";").forEach((cookie) => {
+        const eqPos = cookie.indexOf("=");
+        const name =
+          eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      });
+      console.log("已清除所有cookies");
+
+      // 恢复需要保留的数据（如果有的话）
+      // Object.entries(dataToKeep).forEach(([key, value]) => {
+      //   localStorage.setItem(key, value);
+      // });
+
+      console.log("本地数据清除完成");
+    } catch (error) {
+      console.error("清除本地数据时出错:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-6 bg-white text-black max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold text-center mb-4">File Manager</h1>
@@ -245,7 +299,8 @@ export default function FileManager() {
 
       <button
         onClick={() => {
-          logout();
+          clearAllLocalData(); // 先清除本地数据
+          logout(); // 然后调用登出函数
           router.push("/");
         }}
         className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 mt-4"
