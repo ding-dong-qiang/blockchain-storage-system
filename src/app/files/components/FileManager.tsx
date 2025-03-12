@@ -322,9 +322,14 @@ export default function FileManager() {
 
       <button
         onClick={() => {
-          clearAllLocalData(); // 先清除本地数据
-          logout(); // 然后调用登出函数
-          router.push("/");
+          const confirmLogout = confirm(
+            "Are you sure you want to logout? Logging out will clear all local data. Make sure to save your work before proceeding."
+          );
+          if (confirmLogout) {
+            clearAllLocalData(); // 先清除本地数据
+            logout(); // 然后调用登出函数
+            router.push("/");
+          }
         }}
         className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 mt-4"
       >
