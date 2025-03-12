@@ -94,7 +94,7 @@ function getFileData(id: string): string | null {
 /**
  * Save encrypted file data to storage
  */
-function saveFileData(id: string, content: string): void {
+export function saveFileData(id: string, content: string): void {
   try {
     const encrypted = encryptWithKey(content);
     localStorage.setItem(`${FILE_PREFIX}${id}`, encrypted);

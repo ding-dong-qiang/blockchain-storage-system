@@ -12,6 +12,7 @@ import {
   FileData,
   IPFSState,
   handleIPFSUpdate,
+  saveFileData,
 } from "../utils/fileStorage";
 
 export default function FileManager() {
@@ -52,6 +53,28 @@ export default function FileManager() {
     // If authenticated, update the file list
     updateFileList();
   }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!selectedFile) return;
+    if (fileContent === null || fileContent === undefined) return;
+
+    console.log("开始保存文件内容");
+    console.log("fileContent", fileContent);
+
+    const timeoutId = setTimeout(() => {
+      try {
+        saveFileData(selectedFile.id, fileContent);
+        console.log("文件保存成功");
+      } catch (error) {
+        console.error("保存文件时出错:", error);
+      }
+    }, 1000);
+
+    return () => {
+      console.log("清除之前的定时器");
+      clearTimeout(timeoutId);
+    };
+  }, [fileContent]);
 
   const updateFileList = async () => {
     try {
