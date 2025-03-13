@@ -54,6 +54,22 @@ export default function FileManager() {
     updateFileList();
   }, [isAuthenticated, router]);
 
+  // 添加一个事件监听器，用于监听filesUpdated事件
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleFilesUpdated = () => {
+      console.log("收到filesUpdated事件，开始更新文件列表");
+      updateFileList();
+    };
+
+    window.addEventListener("filesUpdated", handleFilesUpdated);
+
+    return () => {
+      window.removeEventListener("filesUpdated", handleFilesUpdated);
+    };
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (!selectedFile) return;
     if (fileContent === null || fileContent === undefined) return;
