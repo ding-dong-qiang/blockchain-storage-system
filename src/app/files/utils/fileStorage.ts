@@ -329,21 +329,37 @@ function generateId(): string {
 /**
  * Combine all files into a single JSON file for IPFS
  */
-async function getAllFilesForIPFS(): Promise<IPFSFileData[]> {
-  const index = getFileIndex();
-  const files: IPFSFileData[] = [];
+// async function getAllFilesForIPFS(): Promise<IPFSFileData[]> {
+//   const index = getFileIndex();
+//   const files: IPFSFileData[] = [];
 
-  for (const [id, info] of Object.entries(index)) {
-    const encrypted = getFileData(id);
-    if (encrypted !== null) {
-      files.push({
-        filename: info.title,
-        content: encrypted, // Use encrypted content directly for IPFS
-      });
+//   for (const [id, info] of Object.entries(index)) {
+//     const encrypted = getFileData(id);
+//     if (encrypted !== null) {
+//       files.push({
+//         filename: info.title,
+//         content: encrypted, // Use encrypted content directly for IPFS
+//       });
+//     }
+//   }
+
+//   return files;
+// }
+
+async function getAllFilesForIPFS(): Promise<string> {
+  const files = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("file_")) {
+      const content = localStorage.getItem(key);
+      if (content !== null) {
+        files.push({ filename: key, content: content });
+      }
     }
   }
 
-  return files;
+  return JSON.stringify(files);
 }
 
 /**
@@ -371,8 +387,9 @@ export async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
   try {
     console.log("handleIPFSUpdate - 开始执行");
     // Combine all files into one JSON
-    const allFiles = await getAllFilesForIPFS();
-    const combinedContent = JSON.stringify(allFiles);
+    const combinedContent = await getAllFilesForIPFS();
+    console.log("combinedContent:", combinedContent);
+    // const combinedContent = JSON.stringify(allFiles);
 
     // If there's an existing CID, delete the old file first
     if (ipfsState.cid) {
