@@ -461,6 +461,11 @@ export async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
     // 更新ipfsState中的cid
     const oldCid = ipfsState.cid;
     ipfsState.setCid(response.data.cid);
+
+    // 将新的CID值保存到localStorage中，以便下次使用
+    localStorage.setItem("lastCid", response.data.cid);
+    console.log("CID已保存到localStorage中:", response.data.cid);
+
     console.log("CID已更新:", oldCid, "->", response.data.cid);
 
     console.log("上传完成，CID:", response.data.cid);

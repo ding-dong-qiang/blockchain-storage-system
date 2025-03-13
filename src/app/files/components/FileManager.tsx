@@ -135,11 +135,19 @@ export default function FileManager() {
         authToken ? "已找到" : "未找到"
       );
 
-      // 检查当前cid状态
-      console.log("当前CID状态:", cid);
+      // 从localStorage中重新获取最新的CID值
+      const savedCid = localStorage.getItem("lastCid");
+      if (savedCid && savedCid !== cid) {
+        console.log("从localStorage获取到新的CID值:", savedCid);
+        setCid(savedCid);
+      }
 
-      const ipfsState: IPFSState = { cid, setCid };
-      console.log("准备调用updateFile函数，传递CID:", cid);
+      // 检查当前cid状态
+      console.log("当前CID状态:", savedCid || cid);
+
+      // 使用从localStorage获取的CID值创建ipfsState对象
+      const ipfsState: IPFSState = { cid: savedCid || cid, setCid };
+      console.log("准备调用updateFile函数，传递CID:", savedCid || cid);
       await updateFile(selectedFile.id, fileContent, ipfsState);
       console.log("updateFile函数调用完成，新CID:", cid);
       await updateFileList();
