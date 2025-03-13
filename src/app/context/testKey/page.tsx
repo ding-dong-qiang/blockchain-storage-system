@@ -38,8 +38,16 @@ export default function GenerateKey() {
       // 使用公钥作为文件名并添加.json后缀
       const fileName = `${pubKey}.json`;
 
-      // 创建空白JSON文件
-      const jsonContent = "{}";
+      // 创建包含公钥信息的JSON文件
+      const jsonContent = JSON.stringify(
+        {
+          publicKey: pubKey,
+          timestamp: new Date().toISOString(),
+          type: "public_key",
+        },
+        null,
+        2
+      );
       const fileBlob = new Blob([jsonContent], { type: "application/json" });
       const file = new File([fileBlob], fileName, { type: "application/json" });
 
@@ -76,13 +84,20 @@ export default function GenerateKey() {
       </h1>
 
       <div className="flex flex-col items-center mt-10">
-        <button
-          onClick={handleGenerateKey}
-          className="px-6 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 active:scale-95"
-          disabled={isUploading}
-        >
-          Generate New Key
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={handleGenerateKey}
+            className="px-6 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 active:scale-95"
+            disabled={isUploading}
+          >
+            Generate New Key
+          </button>
+          <Link href="/">
+            <button className="px-6 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 active:scale-95">
+              Back to Home
+            </button>
+          </Link>
+        </div>
 
         {generatedKey && (
           <div className="mt-8 p-4 border rounded bg-white w-full max-w-xl">
@@ -112,12 +127,12 @@ export default function GenerateKey() {
                     value={publicKey}
                     className="w-full p-2 border rounded text-sm font-mono"
                   />
-                  <button
+                  {/* <button
                     onClick={() => copyToClipboard(publicKey)}
                     className="ml-2 px-3 bg-blue-500 text-white rounded active:scale-95 hover:bg-blue-600"
                   >
                     Copy
-                  </button>
+                  </button> */}
                 </div>
               </div>
             )}
@@ -128,11 +143,11 @@ export default function GenerateKey() {
               </div>
             )}
 
-            <div className="mt-6 text-center">
+            {/* <div className="mt-6 text-center">
               <Link href="/" className="text-blue-500 hover:underline">
                 Go to Login Page to Test
               </Link>
-            </div>
+            </div> */}
           </div>
         )}
       </div>

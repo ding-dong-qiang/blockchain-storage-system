@@ -139,19 +139,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
               }
               // 如果文件内容是对象格式
-              else if (
-                typeof fileContent === "object" &&
-                Object.keys(fileContent).length > 0
-              ) {
-                console.log(
-                  "文件内容是对象格式，键数量:",
-                  Object.keys(fileContent).length
-                );
-                Object.entries(fileContent).forEach(([key, value]) => {
-                  console.log("保存键值对到localStorage:", key);
-                  localStorage.setItem(key, JSON.stringify(value));
-                });
-              } else {
+              // else if (
+              //   typeof fileContent === "object" &&
+              //   Object.keys(fileContent).length > 0
+              // ) {
+              //   console.log(
+              //     "文件内容是对象格式，键数量:",
+              //     Object.keys(fileContent).length
+              //   );
+              //   Object.entries(fileContent).forEach(([key, value]) => {
+              //     console.log("保存键值对到localStorage:", key);
+              //     localStorage.setItem(key, JSON.stringify(value));
+              //   });
+              // } 
+              else {
                 console.log("文件内容格式不正确，不需要存储到localStorage");
               }
 

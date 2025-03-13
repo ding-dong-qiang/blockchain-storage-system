@@ -7,7 +7,8 @@ import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
-  const { login, isAuthenticated, errorMessage, loading, clearError } = useAuth();
+  const { login, isAuthenticated, errorMessage, loading, clearError } =
+    useAuth();
   const [encryptionKey, setEncryptionKey] = useState("");
 
   // Redirect to files page if already authenticated
@@ -57,18 +58,20 @@ export default function Home() {
           >
             {loading ? "Verifying..." : "Login"}
           </button>
+
+          <Link href="context/testKey">
+            <button className="ml-4 px-6 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 active:scale-95">
+              Create Key
+            </button>
+          </Link>
         </div>
 
         {errorMessage && (
-          <p className="text-red-500 text-sm mt-4 text-center">{errorMessage}</p>
+          <p className="text-red-500 text-sm mt-4 text-center">
+            {errorMessage}
+          </p>
         )}
-        
       </div>
-      <div className="mt-4">
-      <Link href="context/testKey" className="text-blue-500 hover:underline text-sm">
-        Generate key - testing purpose
-      </Link>
     </div>
-  </div>
   );
 }

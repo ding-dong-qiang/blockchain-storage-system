@@ -25,6 +25,8 @@ export default function FileManager() {
   const [message, setMessage] = useState("");
   const [cid, setCid] = useState<string | null>(null);
   const fileListRef = useRef<HTMLUListElement>(null);
+  const [showNewFileDialog, setShowNewFileDialog] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
 
   // 从localStorage加载cid
   useEffect(() => {
@@ -184,9 +186,13 @@ export default function FileManager() {
   };
 
   const handleCreateFile = async () => {
-    const newFileName = prompt("Enter new filename:");
+    setShowNewFileDialog(true);
+    setNewFileName("");
+  };
+
+  const handleNewFileSubmit = async () => {
     if (!newFileName || !newFileName.trim()) {
-      setMessage("Filename cannot be empty");
+      setMessage("文件名不能为空");
       return;
     }
 
@@ -197,15 +203,16 @@ export default function FileManager() {
 
       if (exists) {
         const action = confirm(
-          `File "${trimmedName}" already exists.\nClick OK to create with a new name, or Cancel to skip.`
+          `The file "${trimmedName}" already exists.\nClick OK to create a new name, or Cancel to skip.`
         );
 
         if (!action) {
-          setMessage("File creation cancelled");
+          setMessage("File creation has been canceled.");
+          setShowNewFileDialog(false);
           return;
         }
 
-        // Add a suffix to make the filename unique
+        // 添加后缀使文件名唯一
         let counter = 1;
         let newName = trimmedName;
         while (files.some((f) => f.title === newName)) {
@@ -225,6 +232,7 @@ export default function FileManager() {
         setFileContent("");
         setMessage(`File '${trimmedName}' created successfully`);
       }
+      setShowNewFileDialog(false);
     } catch (error) {
       console.error("Error creating file:", error);
       setMessage("Failed to create file");
@@ -290,7 +298,7 @@ export default function FileManager() {
       <h1 className="text-3xl font-bold text-center mb-4">File Manager</h1>
 
       <div className="flex space-x-4 mb-4">
-        <div className="w-1/4 bg-gray-100 p-4 shadow text-black border border-gray-400 max-h-64 flex flex-col overflow-hidden">
+        <div className="w-1/3 bg-gray-100 p-4 shadow text-black border border-gray-400 max-h-64 flex flex-col overflow-hidden">
           <h2 className="text-sm font-semibold bg-gray-100 p-1 text-left mb-1 underline">
             File List
           </h2>
@@ -312,7 +320,7 @@ export default function FileManager() {
         </div>
 
         <textarea
-          className="w-3/4 p-2 border h-64 text-black border-gray-400 overflow-y-scroll resize-none bg-gray-100"
+          className="w-2/3 p-2 border h-64 text-black border-gray-400 overflow-y-scroll resize-none bg-gray-100"
           value={fileContent}
           onChange={(e) => setFileContent(e.target.value)}
           placeholder="Enter file content here..."
@@ -359,6 +367,41 @@ export default function FileManager() {
       >
         Logout
       </button>
+
+      {showNewFileDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Create New File</h2>
+            <input
+              type="text"
+              className="w-full p-2 border border-gray-300 rounded mb-4"
+              placeholder="Enter file name"
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleNewFileSubmit();
+                }
+              }}
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowNewFileDialog(false)}
+                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleNewFileSubmit}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
