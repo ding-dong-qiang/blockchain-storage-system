@@ -73,8 +73,8 @@ export default function FileManager() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!selectedFile) return;
-    if (fileContent === null || fileContent === undefined) return;
+    if (!selectedFile?.id) return; // 确保 selectedFile 存在
+    if (fileContent == null) return; // 兼容 null 和 undefined
 
     console.log("开始保存文件内容");
     console.log("fileContent", fileContent);
@@ -92,7 +92,7 @@ export default function FileManager() {
       console.log("清除之前的定时器");
       clearTimeout(timeoutId);
     };
-  }, [fileContent]);
+  }, [fileContent, , selectedFile]);
 
   const updateFileList = async () => {
     try {

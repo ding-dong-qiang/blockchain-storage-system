@@ -16,10 +16,10 @@ export interface FileData {
 /**
  * Interface for combined file data for IPFS
  */
-interface IPFSFileData {
-  filename: string;
-  content: string;
-}
+// interface IPFSFileData {
+//   filename: string;
+//   content: string;
+// }
 
 /**
  * Interface for IPFS state management
@@ -400,9 +400,9 @@ export async function handleIPFSUpdate(ipfsState: IPFSState): Promise<void> {
           data: { cid: ipfsState.cid },
         });
         console.log("删除旧文件响应:", deleteResponse.data);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("删除旧文件时出错:", error);
-        if (error.response) {
+        if (axios.isAxiosError(error) && error.response) {
           console.error("错误响应数据:", error.response.data);
           console.error("错误响应状态:", error.response.status);
         }

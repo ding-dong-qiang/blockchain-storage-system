@@ -10,7 +10,6 @@ import {
 import {
   encryptWithKey,
   decryptWithKey,
-  generateKeyPair,
 } from "../files/utils/encryption";
 import axios from "axios";
 import CryptoJS from "crypto-js";
@@ -117,13 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (Array.isArray(fileContent)) {
                 console.log("文件内容是数组格式，长度:", fileContent.length);
 
-                // 检查是否有file_index
-                let hasFileIndex = false;
-
-                // 先遍历一遍，检查是否有file_index
                 for (const item of fileContent) {
                   if (item.filename === "file_index") {
-                    hasFileIndex = true;
                     console.log("找到file_index，直接使用");
                     localStorage.setItem("file_index", item.content);
                     break;
@@ -187,16 +181,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false);
             return true;
           }
-        } catch (e) {
-          // 解密失败 - 无效密钥
+        } catch (error: unknown) {
+          console.error("解密失败 - 无效密钥:", error);
         }
       }
 
       setErrorMessage("Invalid key. Please try again.");
       setLoading(false);
       return false;
-    } catch (error) {
-      setErrorMessage("An error occurred during login");
+    } catch (error: unknown) {
+      console.error("An error occurred during login", error);
       setLoading(false);
       return false;
     }

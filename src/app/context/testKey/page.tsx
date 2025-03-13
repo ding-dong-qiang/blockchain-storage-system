@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { generateKeyPair, encryptWithKey } from "../../files/utils/encryption";
+import { generateKeyPair } from "../../files/utils/encryption";
 import { useAuth } from "../authContext";
 import Link from "next/link";
 import axios from "axios";
@@ -10,7 +10,6 @@ export default function GenerateKey() {
   const { storeTestKey } = useAuth(); // Get the storeTestKey function
   const [generatedKey, setGeneratedKey] = useState("");
   const [publicKey, setPublicKey] = useState("");
-  const [testEncrypted, setTestEncrypted] = useState("");
   const [uploadStatus, setUploadStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
@@ -22,9 +21,7 @@ export default function GenerateKey() {
     // Store the key in the auth context
     storeTestKey(privateKey);
 
-    // Also create and display the encrypted value for reference
-    const testValue = encryptWithKey("valid_user", privateKey);
-    setTestEncrypted(testValue);
+
 
     // 自动上传公钥到服务器
     await uploadPublicKey(publicKey);
