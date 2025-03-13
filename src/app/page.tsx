@@ -71,6 +71,55 @@ export default function Home() {
             {errorMessage}
           </p>
         )}
+
+        <div className="mt-32 text-center">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-xl shadow-sm max-w-3xl mx-auto">
+            <p className="text-gray-700 text-lg mb-6">
+              This is a group project for the INTP-302-A course.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-gray-700 font-semibold mb-3">
+                  Development Team
+                </h3>
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Dong Chen
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Christin Racicot
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Kun Zheng
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Jiaping Liu
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Ruili Hu
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    James Romar Tuling
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Yifang Wu
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Yan Ling Lok
+                  </div>
+                  <div className="p-2 bg-white bg-opacity-50 rounded">
+                    Yuan Lyu
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-gray-700 font-medium">
+                  Advisor: <span className="text-blue-600">Iles W. Wade</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
