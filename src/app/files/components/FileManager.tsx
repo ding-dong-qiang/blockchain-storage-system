@@ -294,12 +294,11 @@ export default function FileManager() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-white text-black max-w-2xl mx-auto">
+    <div className="flex items-center flex-col w-full min-h-screen p-20 bg-gray-900 text-white">
       <h1 className="text-3xl font-bold text-center mb-4">File Manager</h1>
-
-      <div className="flex space-x-4 mb-4">
-        <div className="w-1/3 bg-gray-100 p-4 shadow text-black border border-gray-400 max-h-64 flex flex-col overflow-hidden">
-          <h2 className="text-sm font-semibold bg-gray-100 p-1 text-left mb-1 underline">
+      <div className="flex space-x-4 w-2/3 mb-4">
+        <div className="w-1/3 bg-gray-800 p-4 shadow text-white border border-gray-600 max-h-64 flex flex-col overflow-hidden">
+          <h2 className="text-sm font-semibold bg-gray-800 p-1 text-left mb-1 underline">
             File List
           </h2>
           <ul ref={fileListRef} className="overflow-y-scroll max-h-56 pl-1">
@@ -308,8 +307,8 @@ export default function FileManager() {
                 key={file.id}
                 className={`cursor-pointer text-sm break-words overflow-hidden w-full p-1 ${
                   selectedFile?.id === file.id
-                    ? "bg-gray-300 text-black font-bold"
-                    : "text-black hover:bg-gray-200"
+                    ? "bg-gray-600 text-white font-bold"
+                    : "text-white hover:bg-gray-700"
                 }`}
                 onClick={() => handleLoad(file)}
               >
@@ -320,7 +319,7 @@ export default function FileManager() {
         </div>
 
         <textarea
-          className="w-2/3 p-2 border h-64 text-black border-gray-400 overflow-y-scroll resize-none bg-gray-100"
+          className="w-2/3 p-2 border h-64 text-white border-gray-600 overflow-y-scroll resize-none bg-gray-800"
           value={fileContent}
           onChange={(e) => setFileContent(e.target.value)}
           placeholder="Enter file content here..."
@@ -363,18 +362,18 @@ export default function FileManager() {
             router.push("/");
           }
         }}
-        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 mt-4"
+        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mt-4"
       >
         Logout
       </button>
 
       {showNewFileDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-xl font-bold mb-4">Create New File</h2>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded mb-4"
+              className="w-full p-2 border border-gray-600 rounded mb-4"
               placeholder="Enter file name"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
@@ -388,7 +387,7 @@ export default function FileManager() {
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowNewFileDialog(false)}
-                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+                className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
               >
                 Cancel
               </button>
