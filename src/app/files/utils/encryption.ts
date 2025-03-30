@@ -10,8 +10,6 @@ const ENCRYPTION_CONFIG = {
   salt: process.env.ENCRYPTION_SALT || 'optional-salt-value'
 };
 
-// Key for filename encryption
-const FILENAME_KEY = getPurposeKey('filename');
 
 // Key for mapping encryption
 const MAPPING_KEY = getPurposeKey('mapping');
@@ -22,20 +20,6 @@ const MAPPING_KEY = getPurposeKey('mapping');
 interface EncryptionKey {
   publicKey: string;
   privateKey: string;
-}
-
-// Utility function to encode string to base64
-function encodeBase64(str: string): string {
-  return btoa(encodeURIComponent(str));
-}
-
-// Utility function to decode base64 to string
-function decodeBase64(str: string): string {
-  try {
-    return decodeURIComponent(atob(str));
-  } catch {
-    return str;
-  }
 }
 
 // Generate a consistent hash for a string
